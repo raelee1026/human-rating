@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Quality Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #09090d;
+    --surface: #111118;
+    --border:  #222230;
+    --accent:  #5b8fff;
+    --accent2: #ff6b6b;
+    --green:   #4ade80;
+    --text:    #e8e8f0;
+    --muted:   #666680;
+    --mono:    'IBM Plex Mono', monospace;
+    --sans:    'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+
+  /* ── Intro ── */
+  #pg-intro { gap: 2rem; }
+  .logo { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 0.4rem 0.9rem; border-radius: 2px; }
+  h1 { font-weight: 300; font-size: clamp(1.6rem,4vw,2.4rem); letter-spacing: -0.02em; text-align: center; line-height: 1.2; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .subtitle { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); text-align: center; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 1rem; }
+  label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.7rem 1rem; color: var(--text); font-family: var(--mono); font-size: 1rem; outline: none; transition: border-color 0.15s; }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn { padding: 0.75rem 2rem; border: none; border-radius: 4px; font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.08em; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  /* ── Instructions ── */
+  #pg-instructions { gap: 2rem; }
+  .instr-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; max-width: 620px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem; }
+  .instr-card h2 { font-weight: 400; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+  .instr-list { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; }
+  .instr-list li { display: flex; gap: 1rem; align-items: flex-start; font-size: 0.95rem; line-height: 1.6; color: #b0b0c8; }
+  .instr-num { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); background: rgba(91,143,255,0.1); border: 1px solid rgba(91,143,255,0.3); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .instr-note { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); background: rgba(255,255,255,0.03); border-left: 2px solid var(--accent); padding: 0.6rem 0.8rem; border-radius: 0 4px 4px 0; }
+
+  /* ── Trial — FULL SCREEN ── */
+  #pg-trial {
+    justify-content: flex-start;
+    padding: 0.75rem 1rem 1rem;
+    gap: 0.6rem;
+    min-height: 100vh;
+  }
+  .trial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .trial-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+  .scene-tag { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+  .trial-question { font-size: 0.9rem; font-weight: 300; opacity: 0.85; }
+  .progress-bar-wrap { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 0.75rem; }
+  .progress-bar-bg { flex: 1; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+  .progress-label { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+  .trial-controls-inline { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+  .hint { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); max-width: 220px; text-align: right; }
+
+  /* ── Videos — fill remaining screen ── */
+  .videos-wrap {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    flex: 1;        /* ← key: fills all remaining vertical space */
+    min-height: 0;
+  }
+  .video-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+  }
+  .video-label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; flex-shrink: 0; }
+  .video-box {
+    width: 100%;
+    flex: 1;
+    position: relative;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+    transition: border-color 0.15s;
+    aspect-ratio: 16/9;
+  }
+  .video-panel:hover .video-box { border-color: var(--accent); }
+  .video-panel.selected .video-box { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(91,143,255,0.18); }
+  .video-panel.selected .video-label { color: var(--accent); }
+  .video-box video { width: 100%; height: 100%; display: block; object-fit: contain; }
+  .video-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); transition: opacity 0.2s; }
+  .video-overlay.hidden { opacity: 0; pointer-events: none; }
+  .play-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.88); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .play-icon svg { width: 28px; height: 28px; fill: #111; margin-left: 4px; }
+  .selected-badge { display: none; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; background: var(--accent); color: #fff; padding: 0.25rem 0.7rem; border-radius: 2px; flex-shrink: 0; }
+  .video-panel.selected .selected-badge { display: block; }
+
+  /* ── Results ── */
+  #pg-results { gap: 2rem; }
+  .results-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; max-width: 440px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.4rem; text-align: center; }
+  .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .status-icon.success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); }
+  .status-icon.error   { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); }
+  .status-icon.loading { background: rgba(91,143,255,0.1);  border: 1px solid rgba(91,143,255,0.3); animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-icon svg { width: 30px; height: 30px; fill: none; stroke-width: 2; }
+  .results-card h2 { font-weight: 400; font-size: 1.3rem; }
+  .results-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+  .submit-msg { font-family: var(--mono); font-size: 0.75rem; padding: 0.65rem 1rem; border-radius: 4px; width: 100%; }
+  .submit-msg.ok   { color: var(--green);   background: rgba(74,222,128,0.07);  border: 1px solid rgba(74,222,128,0.2); }
+  .submit-msg.err  { color: var(--accent2); background: rgba(255,107,107,0.07); border: 1px solid rgba(255,107,107,0.2); }
+  .submit-msg.wait { color: var(--accent);  background: rgba(91,143,255,0.07);  border: 1px solid rgba(91,143,255,0.2); }
+  .btn-col { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     CONFIGURATION
+     ================================================================ -->
+<script>
+const CONFIG = {
+  scenes: [
+    'bicycle','bonsai','counter','flowers',
+    'garden','kitchen','room','stump','treehill'
+  ],
+
+  // 3 methods
+  methods: [
+    { name: 'imagebase', getUrl: scene => `videos/${scene}_imagebase.mp4` },
+    { name: 'pointbase', getUrl: scene => `videos/${scene}_pointbase.mp4` },
+    { name: 'base',        getUrl: scene => `videos/${scene}.mp4` },
+  ],
+
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxUx1uBA86ugTa5jOtfUIhtxQIrCIZGVjtxs6VEZu8y0HFO4TbmqpzJ23jOACdUEFkeoA/exec',
+};
+</script>
+
+<!-- ========================= PAGE: INTRO ======================== -->
+<div id="pg-intro" class="page active">
+  <span class="logo">Perceptual Quality Study</span>
+  <h1>Which video looks<br><em>more natural</em> to you?</h1>
+  <p class="subtitle">Novel View Synthesis — MipNeRF360</p>
+  <div class="card">
+    <label for="pid-input">Participant ID</label>
+    <input type="text" id="pid-input" placeholder="e.g. P01" autocomplete="off" spellcheck="false">
+    <button class="btn btn-primary" onclick="goToInstructions()">Continue →</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE: INSTRUCTIONS ===================== -->
+<div id="pg-instructions" class="page">
+  <div class="instr-card">
+    <h2>Instructions</h2>
+    <ol class="instr-list">
+      <li>
+        <span class="instr-num">1</span>
+        <span>You will compare <strong>27 pairs</strong> of short videos (~10 s each), covering 9 scenes × 3 pairs per scene.</span>
+      </li>
+      <li>
+        <span class="instr-num">2</span>
+        <span>Press <strong>Play Both</strong> to start simultaneous playback. You may replay as many times as needed.</span>
+      </li>
+      <li>
+        <span class="instr-num">3</span>
+        <span><strong>Click the video</strong> you think looks better — fewer artifacts, more natural appearance, smoother motion.</span>
+      </li>
+      <li>
+        <span class="instr-num">4</span>
+        <span>Press <strong>Next →</strong> to continue to the next pair.</span>
+      </li>
+    </ol>
+    <div class="instr-note">
+      No right or wrong answers — trust your first impression.<br>
+      Estimated time: <strong>10–15 minutes</strong>.
+    </div>
+    <button class="btn btn-primary" onclick="startExperiment()">Start Experiment →</button>
+  </div>
+</div>
+
+<!-- ========================= PAGE: TRIAL ======================== -->
+<div id="pg-trial" class="page">
+
+  <div class="trial-header">
+    <div class="trial-meta">
+      <span class="scene-tag" id="trial-scene-tag">—</span>
+      <p class="trial-question">Which video looks more natural?</p>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <span class="progress-label" id="progress-label">0 / 27</span>
+    </div>
+    <div class="trial-controls-inline">
+      <span class="hint" id="trial-hint">Play both, then click your choice.</span>
+      <button class="btn btn-ghost" onclick="playBoth()" id="btn-play" style="padding:0.6rem 1.2rem">▶ Play Both</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextTrial()" disabled style="padding:0.6rem 1.2rem">Next →</button>
+    </div>
+  </div>
+
+  <div class="videos-wrap">
+    <div class="video-panel" id="panel-left" onclick="selectVideo('left')">
+      <span class="video-label">Video A</span>
+      <div class="video-box">
+        <video id="vid-left" loop playsinline preload="auto"></video>
+        <div class="video-overlay" id="overlay-left">
+          <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        </div>
+      </div>
+      <span class="selected-badge">✓ Selected</span>
+    </div>
+
+    <div class="video-panel" id="panel-right" onclick="selectVideo('right')">
+      <span class="video-label">Video B</span>
+      <div class="video-box">
+        <video id="vid-right" loop playsinline preload="auto"></video>
+        <div class="video-overlay" id="overlay-right">
+          <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        </div>
+      </div>
+      <span class="selected-badge">✓ Selected</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================== PAGE: RESULTS ======================= -->
+<div id="pg-results" class="page">
+  <div class="results-card">
+    <div class="status-icon loading" id="result-icon">
+      <svg viewBox="0 0 24 24" stroke="var(--accent)" fill="none" stroke-width="2">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+      </svg>
+    </div>
+    <h2 id="result-title">Submitting…</h2>
+    <p id="result-desc">Saving your results. Please wait.</p>
+    <div class="submit-msg wait" id="submit-msg">This may take a few moments...</div>
+    <div class="btn-col" id="error-actions" style="display:none">
+      <button class="btn btn-ghost" onclick="retrySubmit()" style="width:100%">↺ Retry Upload</button>
+      <button class="btn btn-ghost" onclick="downloadCSV()" style="width:100%;font-size:0.78rem">⬇ Download CSV &amp; send to researcher</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-restart" onclick="location.reload()" style="width:100%;font-size:0.78rem;display:none">
+      Start Over (next participant)
+    </button>
+  </div>
+</div>
+
+<!-- ============================= JS ============================= -->
+<script>
+let participantId = '', trials = [], currentIdx = 0, results = [];
+let hasPlayed = false, selection = null;
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pid-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') goToInstructions();
+  });
+});
+
+function goToInstructions() {
+  const v = document.getElementById('pid-input').value.trim();
+  if (!v) { document.getElementById('pid-input').style.borderColor = 'var(--accent2)'; return; }
+  participantId = v;
+  showPage('pg-instructions');
+}
+
+// Generate all C(3,2)=3 pairs per scene, shuffle all 27 trials
+function generateTrials() {
+  const methods = CONFIG.methods;
+  const pairs = [];
+  for (let i = 0; i < methods.length; i++)
+    for (let j = i + 1; j < methods.length; j++)
+      pairs.push([methods[i], methods[j]]);
+
+  const allTrials = [];
+  for (const scene of CONFIG.scenes) {
+    for (const [mA, mB] of pairs) {
+      const flip = Math.random() < 0.5;
+      allTrials.push({
+        scene,
+        left:  flip ? mA : mB,
+        right: flip ? mB : mA,
+      });
+    }
+  }
+  return allTrials.sort(() => Math.random() - 0.5);
+}
+
+function startExperiment() {
+  trials = generateTrials(); currentIdx = 0; results = [];
+  showPage('pg-trial'); loadTrial(0);
+}
+
+function loadTrial(idx) {
+  const t = trials[idx];
+  hasPlayed = false; selection = null;
+
+  ['left','right'].forEach(s => {
+    document.getElementById(`panel-${s}`).classList.remove('selected');
+    document.getElementById(`overlay-${s}`).classList.remove('hidden');
+  });
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('btn-play').textContent = '▶ Play Both';
+  document.getElementById('trial-hint').textContent = 'Play both, then click your choice.';
+  document.getElementById('trial-scene-tag').textContent =
+    `Trial ${idx+1} / ${trials.length} — ${t.scene}`;
+  document.getElementById('progress-fill').style.width = (idx / trials.length * 100) + '%';
+  document.getElementById('progress-label').textContent = `${idx} / ${trials.length}`;
+
+  const vl = document.getElementById('vid-left');
+  const vr = document.getElementById('vid-right');
+  vl.pause(); vr.pause();
+  vl.src = t.left.getUrl(t.scene);
+  vr.src = t.right.getUrl(t.scene);
+  vl.load(); vr.load();
+}
+
+function playBoth() {
+  const vl = document.getElementById('vid-left'), vr = document.getElementById('vid-right');
+  vl.currentTime = 0; vr.currentTime = 0;
+  Promise.all([vl.play(), vr.play()]).then(() => {
+    document.getElementById('overlay-left').classList.add('hidden');
+    document.getElementById('overlay-right').classList.add('hidden');
+    document.getElementById('btn-play').textContent = '↺ Replay';
+    hasPlayed = true;
+    if (!selection) document.getElementById('trial-hint').textContent = 'Click the video you prefer.';
+  }).catch(console.warn);
+}
+
+function selectVideo(side) {
+  if (!hasPlayed) { playBoth(); return; }
+  selection = side;
+  ['left','right'].forEach(s =>
+    document.getElementById(`panel-${s}`).classList.toggle('selected', s === side)
+  );
+  document.getElementById('btn-next').disabled = false;
+  document.getElementById('trial-hint').textContent =
+    `Video ${side === 'left' ? 'A' : 'B'} selected.`;
+}
+
+function nextTrial() {
+  if (!selection) return;
+  const t   = trials[currentIdx];
+  const won = selection === 'left' ? t.left : t.right;
+  results.push({
+    observer:   participantId,
+    scene:      t.scene,
+    stimulus_A: `${t.scene}_${t.left.name}`,
+    stimulus_B: `${t.scene}_${t.right.name}`,
+    response:   selection === 'left' ? 1 : 2,
+    selected:   `${t.scene}_${won.name}`,
+    timestamp:  new Date().toISOString(),
+  });
+  currentIdx++;
+  if (currentIdx < trials.length) loadTrial(currentIdx);
+  else finishExperiment();
+}
+
+function finishExperiment() {
+  ['vid-left','vid-right'].forEach(id => document.getElementById(id)?.pause());
+  showPage('pg-results');
+  submitToSheet();
+}
+
+async function submitToSheet() {
+  setIcon('loading');
+  document.getElementById('result-title').textContent = 'Submitting…';
+  document.getElementById('result-desc').textContent = 'Saving your results. Please wait.';
+  document.getElementById('submit-msg').className = 'submit-msg wait';
+  document.getElementById('submit-msg').textContent = 'This may take a few moments...';
+  document.getElementById('error-actions').style.display = 'none';
+  document.getElementById('btn-restart').style.display = 'none';
+
+  const rows = results.map(r =>
+    [r.observer, r.scene, r.stimulus_A, r.stimulus_B, r.response, r.selected, r.timestamp]
+  );
+
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ rows }),
+    });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.error || 'Server error');
+    setIcon('success');
+    document.getElementById('result-title').textContent = 'All Done!';
+    document.getElementById('result-desc').textContent = 'Your responses have been saved. Thank you!';
+    document.getElementById('submit-msg').className = 'submit-msg ok';
+    document.getElementById('submit-msg').textContent = '✓ Saved successfully';
+    document.getElementById('btn-restart').style.display = 'block';
+  } catch (err) {
+    setIcon('error');
+    document.getElementById('result-title').textContent = 'Upload Failed';
+    document.getElementById('result-desc').textContent = 'Please retry or download your results.';
+    document.getElementById('submit-msg').className = 'submit-msg err';
+    document.getElementById('submit-msg').textContent = `✗ ${err.message}`;
+    document.getElementById('error-actions').style.display = 'flex';
+  }
+}
+
+function retrySubmit() { submitToSheet(); }
+
+function setIcon(state) {
+  const el = document.getElementById('result-icon');
+  const icons = {
+    loading: `<svg viewBox="0 0 24 24" stroke="var(--accent)" fill="none" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`,
+    success: `<svg viewBox="0 0 24 24" stroke="var(--green)" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
+    error:   `<svg viewBox="0 0 24 24" stroke="var(--accent2)" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  };
+  el.className = `status-icon ${state}`;
+  el.innerHTML = icons[state];
+}
+
+function buildCSV() {
+  const hdr = 'observer,scene,stimulus_A,stimulus_B,response,selected_condition,timestamp';
+  return [hdr, ...results.map(r =>
+    [r.observer,r.scene,r.stimulus_A,r.stimulus_B,r.response,r.selected,r.timestamp].join(',')
+  )].join('\n');
+}
+
+function downloadCSV() {
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([buildCSV()], {type:'text/csv'})),
+    download: `pwcmp_${participantId}_${Date.now()}.csv`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
